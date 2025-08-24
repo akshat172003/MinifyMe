@@ -9,25 +9,37 @@ const Shorten = () => {
   const [shorturl, setshorturl] = useState("");
   const [generated, setGenerated] = useState("");
   const [copied, setCopied] = useState(false);
+  const [warning, setWarning] = useState("");
 
   const generate = async () => {
+    if (!url.trim()) {
+      setWarning("Please enter a valid URL.");
+      return;
+    }
+
+    setWarning(""); // clear warning if input is valid
+
     const bodyContent = JSON.stringify({
       url: url,
       shorturl: shorturl,
     });
 
-    const response = await fetch("/api/generate", {
-      method: "POST",
-      body: bodyContent,
-      headers: { "Content-Type": "application/json" },
-    });
+    try {
+      const response = await fetch("/api/generate", {
+        method: "POST",
+        body: bodyContent,
+        headers: { "Content-Type": "application/json" },
+      });
 
-    const data = await response.json();
-    setGenerated(`${process.env.NEXT_PUBLIC_HOST}/${shorturl}`);
-    setUrl("");
-    setshorturl("");
-
-    console.log(data);
+      const data = await response.json();
+      setGenerated(`${process.env.NEXT_PUBLIC_HOST}/${shorturl || data.shortUrl}`);
+      setUrl("");
+      setshorturl("");
+      console.log(data);
+    } catch (error) {
+      console.error("Error generating short URL:", error);
+      setWarning("Something went wrong. Try again!");
+    }
   };
 
   const copyToClipboard = () => {
@@ -67,6 +79,8 @@ const Shorten = () => {
             onChange={(e) => setshorturl(e.target.value)}
           />
         </div>
+
+        {warning && <p className="text-red-600 text-sm">{warning}</p>}
 
         <button
           onClick={generate}
